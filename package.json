@@ -1,0 +1,14 @@
+{
+	"name": "io.tesuji.corelib",
+	"displayName": "Tesuji CoreLib",
+	"version": "1.0.0",
+	"unity": "2019.1",
+	"author": "Tesuji",
+	"description": "Tesuji Core Library",
+	"dependencies": {
+	},
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:studiobflat/io.tesuji.corelib.git"
+	}
+}
