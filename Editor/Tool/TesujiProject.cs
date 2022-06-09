@@ -14,6 +14,7 @@ namespace Testuji
         private static TesujiProject _window;
         static Texture2D iconScene;
         static Texture2D iconPlay;
+        static Texture2D iconFolder;
         static GUIStyle productNameStyle;
         static GUIStyle projectStyle;
         static string projectPath;
@@ -27,7 +28,7 @@ namespace Testuji
             if (_window != null) return;
 
             _window = CreateInstance<TesujiProject>();
-            _window.titleContent = new GUIContent(EditorUserBuildSettings.activeBuildTarget.ToString());
+            _window.titleContent = new GUIContent("Project");
             _window.Show();
         }
         
@@ -35,6 +36,8 @@ namespace Testuji
         {
             iconScene = AssetPreview.GetMiniTypeThumbnail(typeof(SceneAsset));
             iconPlay = EditorGUIUtility.FindTexture("PlayButton");
+            iconFolder = EditorGUIUtility.FindTexture("Folder Icon");
+            
 
 			productNameStyle = new GUIStyle(EditorStyles.largeLabel)
 			{
@@ -87,7 +90,9 @@ namespace Testuji
         {
             GUILayout.Label(PlayerSettings.productName, productNameStyle);
 
-            if (GUILayout.Button(projectPath, EditorStyles.toolbarButton))
+            var projectPathContent = new GUIContent(projectPath, iconFolder, "click to open folder");
+
+            if (GUILayout.Button(projectPathContent, EditorStyles.toolbarButton))
             {
                 EditorUtility.RevealInFinder(Application.dataPath);
             }
