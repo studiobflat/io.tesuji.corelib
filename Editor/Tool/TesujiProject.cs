@@ -19,6 +19,9 @@ namespace Testuji
         static GUIStyle projectStyle;
         static string projectPath;
 
+        private static int activeSceneIndex = 0;
+        
+
         const int MAX_SCENE = 5;
         
 
@@ -61,7 +64,32 @@ namespace Testuji
 
             projectPath = string.Join("/", arr);
         }
-		
+
+        void DrawBigPlayButton()
+        {
+            var scenes = EditorBuildSettings.scenes;
+            var scene = scenes[activeSceneIndex];
+            
+            GUILayout.BeginHorizontal();
+            {
+                EditorGUILayout.Space();
+                GUILayout.BeginVertical();
+                {
+                    GUILayout.Space(16);
+                    GUILayout.Label(scene.path);
+                    activeSceneIndex = EditorGUILayout.IntSlider(activeSceneIndex, 0, scenes.Length-1);
+                }
+                GUILayout.EndVertical();
+                if (GUILayout.Button(iconPlay, GUILayout.Width(64f), GUILayout.Height(64f)))
+                {
+                    EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+                    EditorSceneManager.OpenScene(scene.path, OpenSceneMode.Single);
+                    EditorApplication.isPlaying = true;
+                }
+            }
+            GUILayout.EndHorizontal();
+        }
+        
 		static void PlayScene(int n)
 		{
 			var scenes = EditorBuildSettings.scenes;
@@ -142,6 +170,8 @@ namespace Testuji
             if (productNameStyle == null) Init();
 
             DrawProjectInfo();
+            EditorGUILayout.Space();
+            DrawBigPlayButton();
             EditorGUILayout.Space();
             DrawListScenes();
         }
