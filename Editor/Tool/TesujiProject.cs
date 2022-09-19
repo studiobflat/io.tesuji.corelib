@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using System.Linq;
@@ -67,25 +64,33 @@ namespace Testuji
 
         void DrawBigPlayButton()
         {
-            var scenes = EditorBuildSettings.scenes;
-            var scene = scenes[activeSceneIndex];
+            EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
+            if (scenes.Length == 0)
+            {
+	            EditorGUILayout.HelpBox("No scene in Build Settings!", MessageType.Warning);
+	            return;
+            }
+            
+            activeSceneIndex = Mathf.Clamp(activeSceneIndex, 0, scenes.Length - 1);
+            EditorBuildSettingsScene scene = scenes[activeSceneIndex];
             
             GUILayout.BeginHorizontal();
             {
                 EditorGUILayout.Space();
-                GUILayout.BeginVertical();
-                {
-                    GUILayout.Space(16);
-                    GUILayout.Label(scene.path);
-                    activeSceneIndex = EditorGUILayout.IntSlider(activeSceneIndex, 0, scenes.Length-1);
-                }
-                GUILayout.EndVertical();
                 if (GUILayout.Button(iconPlay, GUILayout.Width(64f), GUILayout.Height(64f)))
                 {
                     EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
                     EditorSceneManager.OpenScene(scene.path, OpenSceneMode.Single);
                     EditorApplication.isPlaying = true;
                 }
+                
+                GUILayout.BeginVertical();
+                {
+	                GUILayout.Space(16);
+	                GUILayout.Label(scene.path);
+	                activeSceneIndex = EditorGUILayout.IntSlider(activeSceneIndex, 0, scenes.Length-1);
+                }
+                GUILayout.EndVertical();
             }
             GUILayout.EndHorizontal();
         }
