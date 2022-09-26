@@ -76,6 +76,10 @@ namespace Tesuji
                 if (map.TryGetValue(callback, out UpdateInfo info))
                 {
                     // Debug.LogWarning("Trying to add the same callback!");
+                    info.once = once;
+                    info.priority = priority;
+                    info.delayInFrame = delayInFrame;
+                    dirty = true;
                     return info.id;
                 }
                 
@@ -113,9 +117,9 @@ namespace Tesuji
 
                 if (!map.TryGetValue(callback, out UpdateInfo info)) return false;
                 if (info.callback == null) return false; // removed before?
-                    
+                
                 map.Remove(info.callback);
-                info.callback = null; // do not remove from queue 
+                info.callback = null; // do not remove from queue
                 return true;
             }
 
@@ -165,11 +169,19 @@ namespace Tesuji
                         item.delayInFrame--;
                         continue;
                     }
+
+                    if (item.callback == null)
+                    {
+                        dieCount++;
+                        queue[i] = null;
+                        continue;
+                    }
                     
                     var alive = ExecuteCallback(item);
                     if (alive) continue;
 
                     dieCount++;
+                    map.Remove(queue[i].callback);
                     queue[i] = null;
                 }
 
