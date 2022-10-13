@@ -28,8 +28,14 @@ namespace Tesuji
         {
             _api.StopCoroutine(routineName);
         }
-        
 
+        public static void ClearAndReset()
+        {
+            _api.StopAllCoroutines();
+            _updateQueue.ClearAndReset();
+            _lateUpdateQueue.ClearAndReset();
+        }
+        
         [Serializable]
         public class UpdateInfo
         {
@@ -63,8 +69,15 @@ namespace Tesuji
         {
             private bool dirty;
             internal List<UpdateInfo> queue = new List<UpdateInfo>();
-            private Dictionary<Action, UpdateInfo> map = new Dictionary<Action, UpdateInfo>();
+            internal Dictionary<Action, UpdateInfo> map = new Dictionary<Action, UpdateInfo>();
 
+            internal void ClearAndReset()
+            {
+                queue.Clear();
+                map.Clear();
+                dirty = false;
+            }
+            
             public int Add(Action callback, int priority = 0, bool once = false, int delayInFrame = 0)
             {
                 if (callback == null)
