@@ -1,6 +1,6 @@
 ﻿#pragma warning disable
 
-// #define VERBOSE_LOG
+#define VERBOSE_LOG
 // #define STANDALONE
 
 using System.Collections;
@@ -9,7 +9,6 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections.Generic;
 using System;
-
 
 
 // [+] SUPPORT VERSION
@@ -29,7 +28,7 @@ using System;
 //	LOADER INFO
 
 
-public partial class Loader : MonoBehaviour
+public partial class Loader
 {
 	public enum LDStatus
 	{
@@ -46,8 +45,6 @@ public partial class Loader : MonoBehaviour
 		const float LOCAL_WEIGHT = 0.2f;
 		const float WEB_WEIGHT = 1 - LOCAL_WEIGHT;
 		const string LOCAL_AUTOID = "$auto_id";
-
-
 
 		// CONTROL LOCAL CACHE POLICY
 		internal string localId = LOCAL_AUTOID;
@@ -104,38 +101,21 @@ public partial class Loader : MonoBehaviour
 
 		internal string id;
 
-
-
-
-
 		// 
 		public string url;
-
-
 		internal Type dataType;
-
-
 		internal int version;
 		public object loadedData;
 
 
 		// Callbacks
-
-
 		public string errorMessage;
 		public LDStatus lcStatus;
 		public LDStatus wbStatus;
 
 
-		public bool isFromCache
-		{
-			get { return lcStatus == LDStatus.Success; }
-		}
-
-		public bool isFromWeb
-		{
-			get { return wbStatus == LDStatus.Success; }
-		}
+		public bool isFromCache => lcStatus == LDStatus.Success;
+		public bool isFromWeb => wbStatus == LDStatus.Success;
 
 		internal string _localPath;
 		public string localPath
@@ -152,23 +132,17 @@ public partial class Loader : MonoBehaviour
 					return null;
 				}
 
-				_localPath = Loader.GetLocalPath("data1", localId, version, true);
+				_localPath = GetLocalPath("data", localId, version, true);
 				return _localPath;
 			}
 		}
 
-		public bool willCheckWeb
-		{
-			get
-			{
-				return (lcStatus == LDStatus.Failed) && wbStatus == LDStatus.Idle;
-			}
-		}
+		public bool willCheckWeb => (lcStatus == LDStatus.Failed) && wbStatus == LDStatus.Idle;
 
-		public bool isDone { get { return isSuccess || isFailed; } }
-		public bool isLoading { get { return (lcStatus == LDStatus.Start) || (wbStatus == LDStatus.Start); } }
-		public bool isSuccess { get { return (lcStatus == LDStatus.Success) || (wbStatus == LDStatus.Success); } }
-		public bool isFailed { get { return wbStatus == LDStatus.Failed; } } //(lcStatus == LDStatus.Failed) && 
+		public bool isDone => isSuccess || isFailed;
+		public bool isLoading => (lcStatus == LDStatus.Start) || (wbStatus == LDStatus.Start);
+		public bool isSuccess => (lcStatus == LDStatus.Success) || (wbStatus == LDStatus.Success);
+		public bool isFailed => wbStatus == LDStatus.Failed; //(lcStatus == LDStatus.Failed) && 
 
 		public float progress { get; private set; }
 
@@ -225,24 +199,16 @@ public partial class Loader : MonoBehaviour
 				return;
 			}
 
-#if VERBOSE_LOG
             Debug.LogWarning("[Editor] Invalid state!");
-#endif
 		}
 
 
 		public T GetLoadedData<T>()
 		{
-			if (typeof(T) != dataType)
-			{
-#if VERBOSE_LOG
-                Debug.LogWarning("[Editor] Invalid cast: " + dataType + " --> " + typeof(T));
-#endif
+			if (typeof(T) == dataType) return (T) loadedData;
+			Debug.LogWarning("[Editor] Invalid cast: " + dataType + " --> " + typeof(T));
+			return default(T);
 
-				return default(T);
-			}
-
-			return (T)loadedData;
 		}
 
 		public void UpdateProgress()
@@ -275,9 +241,7 @@ public partial class Loader : MonoBehaviour
 					}
 					catch (Exception e)
 					{
-#if VERBOSE_LOG
                         Debug.LogWarning("Write cache error: " + url + "\n" + localPath + "\n" + e);
-#endif
 					}
 				}
 
@@ -285,22 +249,23 @@ public partial class Loader : MonoBehaviour
 				return;
 			}
 
-#if VERBOSE_LOG
             Debug.LogWarning("Invalid state! " +wbStatus);
-#endif
 		}
 
 		void Request_Texture(string link, ref LDStatus status, ref UnityWebRequest request)
 		{
+			if (request != null)
+			{
+				Debug.LogWarning("Something wrong! " + status);
+				return;
+			}
+			
 			status = LDStatus.Start;
 			request = UnityWebRequestTexture.GetTexture(link, true);
 			request.SendWebRequest();
 		}
-
 		void Request_AudioClip(string link, ref LDStatus status, ref UnityWebRequest request)
 		{
-			// Debug.Log("request AudioCLip: " + request);
-
 			if (request != null)
 			{
 				Debug.LogWarning("Something wrong! " + status);
@@ -311,7 +276,20 @@ public partial class Loader : MonoBehaviour
 			request = UnityWebRequestMultimedia.GetAudioClip(link, AudioType.UNKNOWN);
 			request.SendWebRequest();
 		}
-
+		// void Request_Assetbundle(string link, ref LDStatus status, ref UnityWebRequest request)
+		// {
+		// 	if (request != null)
+		// 	{
+		// 		Debug.LogWarning("Something wrong! " + status);
+		// 		return;
+		// 	}
+		//
+		// 	status = LDStatus.Start;
+		// 	Debug.LogWarning($"request URI: {link}");
+		// 	request = UnityWebRequestAssetBundle.GetAssetBundle(link);
+		// 	request.SendWebRequest();
+		// }
+		
 		bool UpdateProgress(ref LDStatus status, UnityWebRequest request)
 		{
 			if (request == null)
@@ -327,7 +305,7 @@ public partial class Loader : MonoBehaviour
 			if (!request.isDone)
 			{
 				CalculateProgress();
-				if (onProgress != null) onProgress(this);
+				onProgress?.Invoke(this);
 				return false;
 			}
 
@@ -337,13 +315,7 @@ public partial class Loader : MonoBehaviour
 			if (isError)
 			{
 				errorMessage = request.error;
-
-#if VERBOSE_LOG
                 Debug.LogWarning("[Editor] Load error: " + request.url + "\n" + errorMessage);
-#endif
-
-				// Debug.Log("STATUS : " + status);
-				request = null;
 				return false;
 			}
 
@@ -375,6 +347,12 @@ public partial class Loader : MonoBehaviour
 				loadedData = DownloadHandlerAudioClip.GetContent(request);
 				return;
 			}
+			
+			if (dataType == typeof(AssetBundle))
+			{
+				loadedData = AssetBundle.LoadFromMemory(request.downloadHandler.data);
+				return;
+			}
 
 			if (dataType == typeof(string))
 			{
@@ -395,13 +373,7 @@ public partial class Loader : MonoBehaviour
 		//      LOCAL
 		// ------------------
 
-		public bool local_needCheck
-		{
-			get
-			{
-				return (lcStatus == LDStatus.Idle) && !string.IsNullOrEmpty(localId);
-			}
-		}
+		public bool local_needCheck => (lcStatus == LDStatus.Idle) && !string.IsNullOrEmpty(localId);
 
 		internal void CheckLocal()
 		{
@@ -425,7 +397,6 @@ public partial class Loader : MonoBehaviour
 #if VERBOSE_LOG
 				Debug.Log($"No cache found for <{localId}>!\n{localPath}\n{url}");
 #endif
-
 				return; // no cached version found
 			}
 
@@ -454,24 +425,15 @@ public partial class Loader : MonoBehaviour
 
 				Debug.Log($"A cached localId <{localId}> with older version v[{v}] found!");
 			}
-
 			catch (Exception e)
 			{
-#if VERBOSE_LOG
                 Debug.LogWarning(localPath + "\n" + e);
-#endif
 			}
 		}
 
-		internal bool local_willLoadUsingFileIO
-		{
-			get { return (dataType == typeof(byte[]) || dataType == typeof(string)); }
-		}
+		internal bool local_willLoadUsingFileIO => (dataType == typeof(byte[]) || dataType == typeof(string));
 
-		internal bool WillLoadLocal
-		{
-			get { return lcStatus == LDStatus.LCExist; }
-		}
+		internal bool WillLoadLocal => lcStatus == LDStatus.LCExist;
 
 		internal UnityWebRequest lcRequest;
 		internal void LoadLocal()
@@ -486,24 +448,31 @@ public partial class Loader : MonoBehaviour
 			}
 
 			// Debug.Log("LoadLocal: " + url + " \n " + localPath + "\n" + dataType);
-
 			lcStatus = LDStatus.Start;
 
 			if (dataType == typeof(byte[])) { LoadLocal_Bytes(); return; }
 			if (dataType == typeof(string)) { LoadLocal_String(); return; }
 			if (dataType == typeof(Texture2D)) { Request_Texture("file://" + localPath, ref lcStatus, ref lcRequest); return; }
 			if (dataType == typeof(AudioClip)) { Request_AudioClip("file://" + localPath, ref lcStatus, ref lcRequest); return; }
-
-#if VERBOSE_LOG
+			// if (dataType == typeof(AssetBundle)) { Request_Assetbundle("file://" + localPath, ref lcStatus, ref lcRequest); return; }
+			if (dataType == typeof(AssetBundle)) { LoadLocal_Bytes(); return; }
+			
             Debug.LogWarning("Unsupported dataType: " + dataType);
-#endif
 		}
 
 		void LoadLocal_Bytes()
 		{
 			try
 			{
-				loadedData = File.ReadAllBytes(localPath);
+				if (dataType == typeof(AssetBundle))
+				{
+					loadedData = AssetBundle.LoadFromFile(localPath);
+				}
+				else
+				{
+					loadedData = File.ReadAllBytes(localPath);	
+				}
+				
 				lcStatus = LDStatus.Success;
 			}
 			catch (Exception e)
@@ -552,7 +521,7 @@ public partial class Loader : MonoBehaviour
 			wbStatus = LDStatus.Start;
 			if (dataType == typeof(Texture2D)) { Request_Texture(url, ref wbStatus, ref webRequest); return; }
 			if (dataType == typeof(AudioClip)) { Request_AudioClip(url, ref wbStatus, ref webRequest); return; }
-
+			
 			webRequest = UnityWebRequest.Get(url);
 			webRequest.timeout = timeout;
 			webRequest.SendWebRequest();
@@ -570,7 +539,7 @@ public partial class Loader : MonoBehaviour
 //
 //	LOADER VERSION
 //
-public partial class Loader : MonoBehaviour
+public partial class Loader
 {
 	[Serializable]
 	public class FileVersion
@@ -603,31 +572,25 @@ public partial class Loader : MonoBehaviour
 				}
 				catch (Exception e)
 				{
-#if VERBOSE_LOG
 					Debug.LogWarning("Invalid version.json!\n" + e);
-#endif
 				}
 
 			}
 
 			// Initialize version
-			if (files == null) files = new List<FileVersion>();
-			if (versionMap == null) versionMap = new Dictionary<string, FileVersion>();
+			files ??= new List<FileVersion>();
+			versionMap ??= new Dictionary<string, FileVersion>();
 		}
 
 		public int GetVersion(string id)
 		{
 			if (versionMap == null)
 			{
-#if VERBOSE_LOG
 				Debug.LogWarning("versionMap not inited!");
-#endif
-
 				return -1;
 			}
 
-			FileVersion result;
-			if (false == versionMap.TryGetValue(id, out result)) return -1;
+			if (false == versionMap.TryGetValue(id, out FileVersion result)) return -1;
 			return result.version;
 		}
 
@@ -646,53 +609,40 @@ public partial class Loader : MonoBehaviour
 		{
 			if (versionMap == null)
 			{
-#if VERBOSE_LOG
 				Debug.LogWarning("versionMap not inited!");
-#endif
-
 				return false;
 			}
 
-			FileVersion ofv;
-			if (versionMap.TryGetValue(id, out ofv))
+			if (!versionMap.TryGetValue(id, out FileVersion _)) return false;
+			
+			versionMap.Remove(id);
+			var fileCount = files.Count;
+			for (int i = 0; i < fileCount; i++)
 			{
-				versionMap.Remove(id);
-				var fileCount = files.Count;
-				for (int i = 0; i < fileCount; i++)
+				if (files[i].id == id)
 				{
-					if (files[i].id == id)
-					{
-						files.RemoveAt(i);
-						break;
-					}
+					files.RemoveAt(i);
+					break;
 				}
-
-				CallNextFrame(Save);
-				return true;
 			}
 
-			return false;
+			CallNextFrame(Save);
+			return true;
 		}
 
 		public bool Write(string id, int version)
 		{
 			if (versionMap == null)
 			{
-#if VERBOSE_LOG
 				Debug.LogWarning("versionMap not inited!");
-#endif
-
 				return false;
 			}
 
-			FileVersion ofv;
-			if (versionMap.TryGetValue(id, out ofv)) // existed
+			if (versionMap.TryGetValue(id, out FileVersion ofv)) // existed
 			{
 				if (version <= ofv.version)
 				{
-#if VERBOSE_LOG
 					Debug.LogWarning("Can not update to lower version: " + JsonUtility.ToJson(ofv) + " newVersion=" + version);
-#endif
 				}
 				ofv.version = version;
 			}
@@ -720,7 +670,7 @@ public partial class Loader : MonoBehaviour
 //
 //	LOADER GROUP
 //
-public partial class Loader : MonoBehaviour
+public partial class Loader
 {
 	[Serializable]
 	public class LDGroup
@@ -736,7 +686,7 @@ public partial class Loader : MonoBehaviour
 		public T GetLoadedDataAt<T>(int index)
 		{
 			if (index < 0 || index >= list.Count) return default(T);
-			var item = list[index];
+			LDInfo item = list[index];
 			return (item == null) ? default(T) : item.GetLoadedData<T>();
 		}
 
@@ -745,9 +695,9 @@ public partial class Loader : MonoBehaviour
 			var n = list.Count;
 			var result = new T[n];
 
-			for (int i = 0; i < n; i++)
+			for (var i = 0; i < n; i++)
 			{
-				var item = list[i];
+				LDInfo item = list[i];
 				result[i] = (item == null) ? default(T) : item.GetLoadedData<T>();
 			}
 
@@ -758,6 +708,7 @@ public partial class Loader : MonoBehaviour
 		{
 			if (item != null)
 			{
+				item.dataType = typeof(T);
 				item.onProgress = OnItemUpdate;
 				item.onComplete = OnItemUpdate;
 				item.onError = OnItemUpdate;
@@ -773,7 +724,7 @@ public partial class Loader : MonoBehaviour
 
 		public LDGroup Add<T>(string url, int version = 0, string localId = null)
 		{
-			var item = Load<T>(url);
+			LDInfo item = Load<T>(url);
 			item.version = version;
 			if (!string.IsNullOrEmpty(localId)) item.SetLocalCacheId(localId);
 			return Add<T>(item);
@@ -781,7 +732,7 @@ public partial class Loader : MonoBehaviour
 
 		public LDGroup Add<T>(params string[] urls)
 		{
-			for (int i = 0; i < urls.Length; i++)
+			for (var i = 0; i < urls.Length; i++)
 			{
 				Add<T>(urls[i]);
 			}
@@ -790,7 +741,7 @@ public partial class Loader : MonoBehaviour
 		}
 
 
-		bool _needRefresh = false;
+		bool _needRefresh;
 		void OnItemUpdate(LDInfo info)
 		{
 			if (_needRefresh) return; // will update next frame!
@@ -810,9 +761,9 @@ public partial class Loader : MonoBehaviour
 			nSuccess = 0;
 			nFailed = 0;
 
-			for (int i = 0; i < count; i++)
+			for (var i = 0; i < count; i++)
 			{
-				var item = list[i];
+				LDInfo item = list[i];
 				sum += item.progress;
 
 				if (item.isSuccess)
@@ -837,12 +788,10 @@ public partial class Loader : MonoBehaviour
 			progress = sum / count;
 			// Debug.Log("Check: " + progress + " : " + nSuccess + " / " + nFailed + "/" + list.Count);
 
-			if (nSuccess + nFailed == count)
-			{
-				var temp = onComplete;
-				onComplete = null;
-				if (temp != null) temp(this);
-			}
+			if (nSuccess + nFailed != count) return;
+			Action<LDGroup> temp = onComplete;
+			onComplete = null;
+			temp?.Invoke(this);
 		}
 
 		public void Retry()
@@ -864,7 +813,7 @@ public partial class Loader : MonoBehaviour
 	}
 	public static LDGroup CreateGroup<T>(string[] urls, Action<LDGroup> onComplete)
 	{
-		var result = new LDGroup() { onComplete = onComplete }.Add<T>(urls);
+		LDGroup result = new LDGroup() { onComplete = onComplete }.Add<T>(urls);
 		allGroups.Add(result);
 		return result;
 	}
@@ -877,7 +826,7 @@ public partial class Loader : MonoBehaviour
 public partial class Loader : MonoBehaviour
 {
 	private static Loader _api;
-	public bool dontDestroyOnLoad = false;
+	public bool dontDestroyOnLoad;
 
 #if STANDALONE
     [RuntimeInitializeOnLoadMethod] static void Initialize()
@@ -891,17 +840,14 @@ public partial class Loader : MonoBehaviour
 	{
 		if (_api != null && _api != this)
 		{
-#if VERBOSE_LOG
             Debug.LogWarning("Multiple Loader found!!!");
-#endif
-
 			Destroy(this);
 			return;
 		}
 
 		_api = this;
 		// gameObject.hideFlags = HideFlags.HideAndDontSave;
-		if (dontDestroyOnLoad == true) DontDestroyOnLoad(_api);
+		if (dontDestroyOnLoad) DontDestroyOnLoad(_api);
 	}
 }
 
@@ -911,17 +857,16 @@ public partial class Loader : MonoBehaviour
 //	STATIC APIS
 //
 
-public partial class Loader : MonoBehaviour
+public partial class Loader
 {
-	static private List<LDInfo> queue;
+	private static List<LDInfo> queue;
 	static Action delayCalls;
-	static internal void CallNextFrame(Action a)
+	internal static void CallNextFrame(Action a)
 	{
 		delayCalls -= a;
 		delayCalls += a;
 	}
-
-	static internal string GetLocalPath(string path, string fileName, int version, bool createDir = false)
+	internal static string GetLocalPath(string path, string fileName, int version, bool createDir = false)
 	{
 #if UNITY_EDITOR
         var localDir = Path.Combine(Application.dataPath.Replace("Assets", string.Empty), "Library/Tesuji/" + path);
@@ -930,16 +875,23 @@ public partial class Loader : MonoBehaviour
 #endif
 
 		var localPath = Path.Combine(localDir, fileName);
-		if (createDir) Directory.CreateDirectory(localDir);
+		if (createDir)
+		{
+			Directory.CreateDirectory(localDir);
+#if UNITY_IOS
+			UnityEngine.iOS.Device.SetNoBackupFlag(_localPath);
+#endif
+		}
 		return localPath;
 	}
-	static public string GetAutoId(string url)
+	public static string GetAutoId(string url)
 	{
 		if (string.IsNullOrEmpty(url)) return null;
 
 		var id = url
 				.Replace("http://", string.Empty)
 				.Replace("https://", string.Empty)
+				.Replace("file://", string.Empty)
 				.Replace("?", "_")
 				.Replace("=", "_")
 				.Replace(" ", "_")
@@ -953,7 +905,6 @@ public partial class Loader : MonoBehaviour
 #if VERBOSE_LOG
             Debug.LogWarning("[Editor] Too long id will be truncated, explicit delare an id then! \n" + id);
 #endif
-
 			id = id.Substring(id.Length - 128, 128);
 		}
 #if VERBOSE_LOG
@@ -965,36 +916,28 @@ public partial class Loader : MonoBehaviour
 
 		return id;
 	}
-
-	static public void Load(LDInfo info)
+	public static void Load(LDInfo info)
 	{
 		// must check null because queue will be null while processing
-		if (queue == null) queue = new List<LDInfo>();
+		queue ??= new List<LDInfo>();
 		queue.Add(info);
 	}
-
-	static public LDInfo Load<T>(string url, Action<LDInfo> onComplete = null, Action<LDInfo> onError = null, int version = 0)
+	public static LDInfo Load<T>(string url, Action<LDInfo> onComplete = null, Action<LDInfo> onError = null, int version = 0)
 	{
 		// must check null because queue will be null while processing
-		if (queue == null) queue = new List<LDInfo>();
-
+		queue ??= new List<LDInfo>();
+		
 		if (string.IsNullOrEmpty(url))
 		{
-#if VERBOSE_LOG
             Debug.LogWarning("URL should not be null!");
-#endif
-
 			return null;
 		}
 
-		if (!url.StartsWith("http://") && !url.StartsWith("https://"))
-		{
-#if VERBOSE_LOG
-            Debug.LogWarning("Unsupported protocol, are you using the - not yet supported - relative links? -->\n" + url);
-#endif
-
-			return null;
-		}
+		// if (!url.StartsWith("http://") && !url.StartsWith("https://") && !url.StartsWith("file://"))
+		// {
+  //           Debug.LogWarning("Unsupported protocol, are you using the - not yet supported - relative links? -->\n" + url);
+		// 	return null;
+		// }
 
 		url = url.Replace("\\", "/");
 		var id = GetAutoId(url);
@@ -1017,7 +960,7 @@ public partial class Loader : MonoBehaviour
 
 
 
-public partial class Loader : MonoBehaviour
+public partial class Loader
 {
 	[Range(1, 10)] public int maxWebRequest = 4;
 	[Range(1, 20)] public int maxFileIOPerFrame = 10;
@@ -1040,7 +983,7 @@ public partial class Loader : MonoBehaviour
 
 			if (delayCalls != null) // next frame helper
 			{
-				var cb = delayCalls;
+				Action cb = delayCalls;
 				delayCalls = null;
 				cb();
 			}
@@ -1054,7 +997,7 @@ public partial class Loader : MonoBehaviour
 				continue;
 			}
 
-			var temp = queue;
+			List<LDInfo> temp = queue;
 			queue = null; //swap to temporary variable to make sure the queue is isolated
 
 			// Update progress for loading items & remove downloaded ones
@@ -1077,9 +1020,9 @@ public partial class Loader : MonoBehaviour
 		// Debug.Log("Status: " + list.Count);
 		nRequesting = 0;
 
-		for (int i = list.Count - 1; i >= 0; i--)
+		for (var i = list.Count - 1; i >= 0; i--)
 		{
-			var item = list[i];
+			LDInfo item = list[i];
 
 			// newly added item need check for local cache
 			if (item.local_needCheck)
