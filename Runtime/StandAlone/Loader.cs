@@ -879,7 +879,7 @@ public partial class Loader
 		{
 			Directory.CreateDirectory(localDir);
 #if UNITY_IOS
-			UnityEngine.iOS.Device.SetNoBackupFlag(_localPath);
+			UnityEngine.iOS.Device.SetNoBackupFlag(localPath);
 #endif
 		}
 		return localPath;
