@@ -17,18 +17,16 @@ namespace Testuji
         static string projectPath;
 
         private static int activeSceneIndex = 0;
-        
-
         const int MAX_SCENE = 5;
         
 
-        [MenuItem("Tesuji/Panel/Project")]
+        [MenuItem("Tesuji/Control Panel")]
         private static void ShowWindow()
         {
             if (_window != null) return;
 
             _window = CreateInstance<TesujiProject>();
-            _window.titleContent = new GUIContent("Project");
+            _window.titleContent = new GUIContent("Tesuji CP");
             _window.Show();
         }
         
@@ -177,6 +175,18 @@ namespace Testuji
             DrawProjectInfo();
             EditorGUILayout.Space();
             DrawBigPlayButton();
+            EditorGUILayout.Space();
+            
+            TesujiControlPanel cp = TesujiControlPanel.Api;
+            if (cp == null)
+            {
+	            EditorGUILayout.HelpBox("TesujiControlPanel asset not found!", MessageType.Warning);
+            } else {
+                EditorGUI.indentLevel++;
+                cp.DrawSettings();
+                EditorGUI.indentLevel--;
+            }
+            
             EditorGUILayout.Space();
             DrawListScenes();
         }
