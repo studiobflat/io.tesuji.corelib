@@ -5,7 +5,7 @@ using UnityEngine;
 public class AvatarURL : MonoBehaviour
 {
     public Texture2D defaultImage;
-    public SkinnedMeshRenderer target;
+    public Renderer target;
     
     [SerializeField] private string _url;
     [NonSerialized] private Material _material;
