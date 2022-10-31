@@ -18,8 +18,8 @@ namespace Tesuji
 #if UNITY_EDITOR
 					Path.Combine(Application.dataPath.Replace("/Assets", "/Library"), "Tesuji");
 #else
-            Path.Combine(Application.persistentDataPath, "Tesuji");
-            Debug.LogWarning(_persistentPath);
+				Application.persistentDataPath;
+				Debug.LogWarning(_persistentPath);
 #endif
 				return _persistentPath;
 			}
@@ -52,7 +52,7 @@ namespace Tesuji
 			}
 			catch (Exception e)
 			{
-				Debug.LogWarning($"Write error {e}\n{path}!");
+				Debug.LogWarning($"WriteText error {e}\n{path}!");
 			}
 		}
 
@@ -66,7 +66,7 @@ namespace Tesuji
 			}
 			catch (Exception e)
 			{
-				Debug.LogWarning($"Write error {e}\n{path}!");
+				Debug.LogWarning($"ReadText error {e}\n{path}!");
 			}
 
 			return null;
