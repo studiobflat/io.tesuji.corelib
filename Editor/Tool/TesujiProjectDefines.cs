@@ -39,10 +39,26 @@ using UnityEditor;
 	{
 		editable = !editable;
 	}
+
+	public static BuildTargetGroup activeBuildTargetGroup
+	{
+		get
+		{
+			var activePlatform = EditorUserBuildSettings.activeBuildTarget;
+			switch (activePlatform)
+			{
+				case BuildTarget.Android : return BuildTargetGroup.Android;
+				case BuildTarget.iOS : return BuildTargetGroup.iOS;
+				default:
+					Debug.LogWarning($"Unsupported platform: {activePlatform}!");
+					return activeBuildTargetGroup;
+			}
+		}
+	}
 	
 	HashSet<string> ReadPlatformSettings()
 	{
-		var settings = PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup)
+		var settings = PlayerSettings.GetScriptingDefineSymbolsForGroup(activeBuildTargetGroup)
 			.Split(';');
 
 		var hash = new HashSet<string>();
@@ -87,8 +103,10 @@ using UnityEditor;
 		
 		var arr =  hash.ToArray();
 		Array.Sort(arr);
-		// Debug.LogWarning($"Recompile: {string.Join(" ; ", arr)}");
-		PlayerSettings.SetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, arr);
+		
+		Debug.LogWarning($"Recompile: {string.Join(" ; ", arr)} | {EditorUserBuildSettings.activeBuildTarget} | {EditorUserBuildSettings.selectedBuildTargetGroup.ToString()}");
+		PlayerSettings.SetScriptingDefineSymbolsForGroup(activeBuildTargetGroup, arr);
+		
 	}
 	
 	[NonSerialized] private static bool hasRefresh;
