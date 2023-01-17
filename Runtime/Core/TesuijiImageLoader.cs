@@ -140,16 +140,18 @@ namespace Tesuji
 		{
 			public string url;
 			public Action<Texture2D> onComplete;
+			public Action<string> onError;
 		}
 
 		private static readonly Dictionary<string, Texture2D> loadedMap = new Dictionary<string, Texture2D>();
 		private static readonly Dictionary<string, LoaderItem> loadingMap = new Dictionary<string, LoaderItem>();
 
-		public static void Load(string url, Action<Texture2D> onComplete = null)
+		public static void Load(string url, Action<Texture2D> onComplete = null, Action<string> onError = null)
 		{
 			if (string.IsNullOrEmpty(url))
 			{
 				Debug.Log($"Can not load a null url!");
+				onError?.Invoke("Null url");
 				return;
 			}
 #if VERBOSE_LOG
@@ -161,12 +163,21 @@ namespace Tesuji
 				onComplete?.Invoke(result);
 				return;
 			}
-
+			
 			if (loadingMap.TryGetValue(url, out LoaderItem ldi))
 			{
-				if (onComplete == null) return;
-				ldi.onComplete -= onComplete;
-				ldi.onComplete += onComplete;
+				if (onComplete != null)
+				{
+					ldi.onComplete -= onComplete;
+					ldi.onComplete += onComplete;	
+				}
+
+				if (onError != null)
+				{
+					ldi.onError -= onError;
+					ldi.onError += onError;
+				}
+				 
 				return;
 			}
 
@@ -187,7 +198,8 @@ namespace Tesuji
 			TesujiUpdateManager.StartRoutine(LoadImageRoutine(new LoaderItem()
 			{
 				url = url,
-				onComplete = onComplete
+				onComplete = onComplete,
+				onError = onError
 			}));
 		}
 
@@ -215,14 +227,14 @@ namespace Tesuji
 			if (request.result != UnityWebRequest.Result.Success) // failed
 			{
 				Debug.LogWarning($"LoadImageRoutine error: {request.error}\n{item.url}");
+				item.onError?.Invoke(request.error);
 				yield break;
 			}
 
 #if VERBOSE_LOG
         Debug.Log($"Load complete: {item.url}");
 #endif
-
-
+			
 			Texture2D tex = ((DownloadHandlerTexture) request.downloadHandler).texture;
 			loadedMap.Add(item.url, tex);
 			ImageCatalog.Add2Cache(tex, item.url);
